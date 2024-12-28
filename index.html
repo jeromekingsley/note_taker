@@ -3,151 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Note Taker</title>
+    <title>Tic-Tac-Toe</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #f4f4f9;
-        }
-
-        .note-container {
-            width: 90%;
-            max-width: 600px;
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            flex-direction: column;
+            overflow: hidden;
         }
 
         h1 {
-            text-align: center;
-            color: #333;
+            color: #4A90E2;
+            font-size: 24px;
+            margin-bottom: 15px;
         }
 
-        textarea {
-            width: 100%;
-            height: 200px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            resize: none;
-            outline: none;
-            transition: border-color 0.3s;
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 8px;
+            margin-top: 20px;
         }
 
-        textarea:focus {
-            border-color: #4CAF50;
-        }
-
-        .buttons {
+        .cell {
             display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-        }
-
-        .buttons button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+            font-weight: bold;
+            background-color: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .cell:hover {
+            background-color: #f8f8f8;
+            transform: scale(1.05);
+        }
+
+        .cell.X {
+            color: #E94E77;
+        }
+
+        .cell.O {
+            color: #4A90E2;
+        }
+
+        .message {
             font-size: 16px;
-            transition: background-color 0.3s;
+            font-weight: 600;
+            color: #333;
+            margin-top: 15px;
+            animation: fadeIn 1s ease-in-out;
         }
 
-        .buttons button:focus {
-            outline: none;
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
-        #deleteBtn {
-            background-color: #f44336;
+        button {
+            padding: 8px 15px;
+            margin: 8px;
+            font-size: 14px;
+            background-color: #4CAF50;
             color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
-        #deleteBtn:hover {
-            background-color: #e53935;
+        button:hover {
+            background-color: #45a049;
         }
 
-        #newNoteBtn {
-            background-color: #FF9800;
-            color: white;
+        #computerBtn {
+            background-color: #2196F3;
         }
 
-        #newNoteBtn:hover {
+        #computerBtn:hover {
+            background-color: #0b7dda;
+        }
+
+        #difficultyBtn {
+            background-color: #ff9800;
+        }
+
+        #difficultyBtn:hover {
             background-color: #fb8c00;
         }
 
-        #saveAsFileBtn {
-            background-color: #3f51b5;
-            color: white;
+        .reset-btn {
+            background-color: #f44336;
         }
 
-        #saveAsFileBtn:hover {
-            background-color: #303f9f;
+        .reset-btn:hover {
+            background-color: #e53935;
         }
 
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
     </style>
 </head>
 <body>
 
-    <div class="note-container">
-        <h1>Note Taker</h1>
-        <textarea id="noteText" placeholder="Write your note here..."></textarea>
-        <div class="buttons">
-            <button id="deleteBtn" onclick="deleteNote()">Delete</button>
-            <button id="newNoteBtn" onclick="newNote()">New Note</button>
-            <button id="saveAsFileBtn" onclick="saveNoteAsFile()">Save as File</button>
-        </div>
+    <h1>Tic-Tac-Toe Game</h1>
+    <div class="game-container" id="gameBoard">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
     </div>
 
+    <div class="message" id="message">Player X's Turn</div>
+
+    <button class="reset-btn" onclick="resetGame()">Restart Game</button>
+    <button id="computerBtn" onclick="startComputerGame()">Play Against Computer</button>
+    <button id="difficultyBtn" onclick="toggleDifficulty()">Switch Difficulty</button>
+
+    <footer>Designed and coded by Jerome Kingsley</footer>
+
     <script>
-        // Get elements
-        const noteText = document.getElementById('noteText');
-        const deleteBtn = document.getElementById('deleteBtn');
-        const newNoteBtn = document.getElementById('newNoteBtn');
-        const saveAsFileBtn = document.getElementById('saveAsFileBtn');
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameOver = false;
+        let isComputerGame = false;
+        let isHardMode = true;
 
-        // Load saved note from localStorage
-        window.onload = function() {
-            const savedNote = localStorage.getItem('note');
-            if (savedNote) {
-                noteText.value = savedNote;
-            }
-        };
+        const cells = document.querySelectorAll('.cell');
+        const messageElement = document.getElementById('message');
 
-        // Autosave note as user types
-        noteText.addEventListener('input', function() {
-            localStorage.setItem('note', noteText.value);
+        // Handle cell click event
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                if (gameOver || cell.textContent !== '' || (isComputerGame && currentPlayer === 'O')) return;
+
+                const index = cell.getAttribute('data-index');
+                gameBoard[index] = currentPlayer;
+                cell.textContent = currentPlayer;
+                cell.classList.add(currentPlayer);
+
+                if (checkWin()) {
+                    messageElement.textContent = `Player ${currentPlayer} Wins!`;
+                    gameOver = true;
+                    return;
+                }
+
+                if (gameBoard.every(cell => cell !== '')) {
+                    messageElement.textContent = 'It\'s a Draw!';
+                    gameOver = true;
+                    return;
+                }
+
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                messageElement.textContent = `Player ${currentPlayer}'s Turn`;
+
+                if (isComputerGame && currentPlayer === 'O') {
+                    setTimeout(() => {
+                        hardComputerMove();
+                    }, 500);
+                }
+            });
         });
 
-        // Delete saved note
-        function deleteNote() {
-            localStorage.removeItem('note');
-            noteText.value = '';
-            alert('Note deleted!');
+        // Easy computer move (random move)
+        function easyComputerMove() {
+            const availableCells = gameBoard.map((cell, index) => cell === '' ? index : -1).filter(index => index !== -1);
+            const randomIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+
+            gameBoard[randomIndex] = 'O';
+            cells[randomIndex].textContent = 'O';
+            cells[randomIndex].classList.add('O');
+
+            if (checkWin()) {
+                messageElement.textContent = `Computer Wins!`;
+                gameOver = true;
+                return;
+            }
+
+            if (gameBoard.every(cell => cell !== '')) {
+                messageElement.textContent = 'It\'s a Draw!';
+                gameOver = true;
+                return;
+            }
+
+            currentPlayer = 'X';
+            messageElement.textContent = `Player ${currentPlayer}'s Turn`;
         }
 
-        // Start a new note
-        function newNote() {
-            noteText.value = '';  // Clear the current text area
-            localStorage.removeItem('note');  // Remove the saved note from localStorage
+        // Hard computer move (Minimax algorithm with Alpha-Beta Pruning)
+        function hardComputerMove() {
+            const bestMove = minimax(gameBoard, 'O', -Infinity, Infinity);
+            gameBoard[bestMove] = 'O';
+            cells[bestMove].textContent = 'O';
+            cells[bestMove].classList.add('O');
+
+            if (checkWin()) {
+                messageElement.textContent = `Computer Wins!`;
+                gameOver = true;
+                return;
+            }
+
+            if (gameBoard.every(cell => cell !== '')) {
+                messageElement.textContent = 'It\'s a Draw!';
+                gameOver = true;
+                return;
+            }
+
+            currentPlayer = 'X';
+            messageElement.textContent = `Player ${currentPlayer}'s Turn`;
         }
 
-        // Save note as .txt file
-        function saveNoteAsFile() {
-            const noteContent = noteText.value;
-            const blob = new Blob([noteContent], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'note.txt';
-            link.click();
+        // Minimax algorithm with Alpha-Beta Pruning for unbeatable AI
+        function minimax(board, player, alpha, beta) {
+            const availableCells = board.map((cell, index) => cell === '' ? index : -1).filter(index => index !== -1);
+
+            if (checkWinForPlayer(board, 'X')) return -1; // X wins
+            if (checkWinForPlayer(board, 'O')) return 1;  // O wins
+            if (availableCells.length === 0) return 0; // Draw
+
+            let bestMove = -1;
+            let bestScore = (player === 'O') ? -Infinity : Infinity;
+
+            for (const cell of availableCells) {
+                board[cell] = player;
+                const score = minimax(board, player === 'O' ? 'X' : 'O', alpha, beta);
+                board[cell] = ''; // Undo the move
+
+                if (player === 'O') {
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = cell;
+                    }
+                    alpha = Math.max(alpha, bestScore);
+                } else {
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestMove = cell;
+                    }
+                    beta = Math.min(beta, bestScore);
+                }
+
+                // Alpha-Beta pruning
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+
+            return bestMove;
         }
 
+        // Check if a player has won
+        function checkWinForPlayer(board, player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontal
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical
+                [0, 4, 8], [2, 4, 6]              // Diagonal
+            ];
+
+            return winPatterns.some(pattern =>
+                pattern.every(index => board[index] === player)
+            );
+        }
+
+        // Check if the game is won
+        function checkWin() {
+            return checkWinForPlayer(gameBoard, 'X') || checkWinForPlayer(gameBoard, 'O');
+        }
+
+        // Start playing against computer
+        function startComputerGame() {
+            resetGame();
+            isComputerGame = true;
+            messageElement.textContent = `Player ${currentPlayer}'s Turn`;
+        }
+
+        // Toggle Difficulty Level
+        function toggleDifficulty() {
+            isHardMode = !isHardMode;
+            document.getElementById('difficultyBtn').textContent = isHardMode ? 'Switch to Easy Mode' : 'Switch to Hard Mode';
+        }
+
+        // Reset the game
+        function resetGame() {
+            currentPlayer = 'X';
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameOver = false;
+            isComputerGame = false;
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('X', 'O');
+            });
+            messageElement.textContent = `Player ${currentPlayer}'s Turn`;
+        }
     </script>
 
 </body>
